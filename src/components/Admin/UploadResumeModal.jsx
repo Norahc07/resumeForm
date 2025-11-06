@@ -206,19 +206,37 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
             handleClose();
           } else {
             // Handle specific error messages
-            if (result.error && result.error.includes('too large')) {
+            let errorMsg = result.error;
+            
+            // Extract error message properly (handle both string and object)
+            if (typeof errorMsg === 'object') {
+              errorMsg = errorMsg.message || errorMsg.error || JSON.stringify(errorMsg);
+            }
+            
+            if (errorMsg && errorMsg.includes('too large')) {
               showToast('File is too large. Please compress the image or use a smaller file (under 2MB).', 'error');
+            } else if (errorMsg && errorMsg.includes('email') && errorMsg.includes('configuration')) {
+              showToast('Email service not configured. Please check Vercel environment variables (EMAIL_USER, EMAIL_PASSWORD).', 'error');
             } else {
-              showToast(`Failed to send: ${result.error}`, 'error');
+              showToast(`Failed to send: ${errorMsg || 'Unknown error'}`, 'error');
             }
           }
         } catch (error) {
           setIsUploading(false);
-          const errorMessage = error.message || 'Unknown error occurred';
           
-          // Handle 413 error specifically
+          // Properly extract error message
+          let errorMessage = 'Unknown error occurred';
+          if (error && typeof error === 'object') {
+            errorMessage = error.message || error.error || error.toString();
+          } else if (error) {
+            errorMessage = String(error);
+          }
+          
+          // Handle specific error types
           if (errorMessage.includes('413') || errorMessage.includes('too large') || errorMessage.includes('Content Too Large')) {
             showToast('File is too large for upload. Please compress the image or use a smaller file (under 2MB recommended).', 'error');
+          } else if (errorMessage.includes('email') && (errorMessage.includes('configuration') || errorMessage.includes('authentication'))) {
+            showToast('Email service error. Please check Vercel environment variables (EMAIL_USER, EMAIL_PASSWORD).', 'error');
           } else {
             showToast(`Upload failed: ${errorMessage}`, 'error');
           }
@@ -292,6 +310,9 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 PNG, JPG, GIF (automatically compressed to optimal size)
+              </p>
+              <p className="text-xs text-gray-400 mt-1">
+                Recommended: Under 2MB for best results
               </p>
             </div>
           ) : (

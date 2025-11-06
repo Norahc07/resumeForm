@@ -45,26 +45,77 @@ module.exports = async (req, res) => {
     }
 
     // Convert base64 to buffer
-    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    let imageBuffer;
+    try {
+      imageBuffer = Buffer.from(imageBase64, 'base64');
+      
+      // Validate buffer was created successfully
+      if (!imageBuffer || imageBuffer.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid image data',
+          message: 'Failed to process image. Please ensure the image is valid.',
+          errorCode: 'INVALID_IMAGE_DATA'
+        });
+      }
+      
+      // Check buffer size (should be reasonable)
+      if (imageBuffer.length > 5 * 1024 * 1024) { // 5MB max
+        return res.status(413).json({
+          success: false,
+          error: 'Image too large',
+          message: 'Image size exceeds maximum allowed size (5MB).',
+          errorCode: 'IMAGE_TOO_LARGE'
+        });
+      }
+    } catch (bufferError) {
+      console.error('Error converting base64 to buffer:', bufferError);
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid image format',
+        message: `Failed to process image: ${bufferError.message}`,
+        errorCode: 'IMAGE_PROCESSING_ERROR'
+      });
+    }
 
     // Validate email credentials are set
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.error('Email credentials not configured');
+      console.error('Email credentials not configured', {
+        hasEmailUser: !!process.env.EMAIL_USER,
+        hasEmailPassword: !!process.env.EMAIL_PASSWORD
+      });
       return res.status(500).json({ 
+        success: false,
         error: 'Email service not configured',
-        message: 'EMAIL_USER and EMAIL_PASSWORD environment variables must be set in Vercel'
+        message: 'EMAIL_USER and EMAIL_PASSWORD environment variables must be set in Vercel. Please check your Vercel project settings.',
+        errorCode: 'MISSING_EMAIL_CREDENTIALS'
       });
     }
 
     // Configure email transporter
     // Using Gmail as default - you can change this to any email service
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD, // Use App Password for Gmail
-      },
-    });
+    let transporter;
+    try {
+      transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD, // Use App Password for Gmail
+        },
+      });
+      
+      // Verify transporter configuration
+      await transporter.verify();
+      console.log('Email transporter verified successfully');
+    } catch (verifyError) {
+      console.error('Email transporter verification failed:', verifyError);
+      return res.status(500).json({
+        success: false,
+        error: 'Email service configuration error',
+        message: `Failed to configure email service: ${verifyError.message}. Please check your email credentials.`,
+        errorCode: 'EMAIL_CONFIG_ERROR'
+      });
+    }
 
     // Alternative: Use SMTP for other email services
     // const transporter = nodemailer.createTransport({
@@ -195,6 +246,13 @@ module.exports = async (req, res) => {
 
   } catch (error) {
     console.error('Error in upload-resume API:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      name: error.name,
+      message: error.message,
+      code: error.code
+    });
+    
     // Make sure CORS headers are still set even on error
     const origin = req.headers.origin;
     const isVercelDeployment = origin && (
@@ -206,9 +264,28 @@ module.exports = async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS, GET');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    
+    // Provide more detailed error information
+    let errorMessage = error.message || 'Internal server error';
+    let errorCode = error.code || 'UNKNOWN_ERROR';
+    
+    // Handle specific error types
+    if (error.code === 'EAUTH' || errorMessage.includes('Invalid login')) {
+      errorMessage = 'Email authentication failed. Please check EMAIL_USER and EMAIL_PASSWORD in Vercel environment variables.';
+      errorCode = 'EMAIL_AUTH_ERROR';
+    } else if (error.code === 'ECONNECTION' || errorMessage.includes('connection')) {
+      errorMessage = 'Failed to connect to email service. Please check your email configuration.';
+      errorCode = 'EMAIL_CONNECTION_ERROR';
+    } else if (errorMessage.includes('nodemailer')) {
+      errorMessage = 'Email service error. Please check nodemailer configuration.';
+      errorCode = 'NODEMAILER_ERROR';
+    }
+    
     return res.status(500).json({ 
-      error: 'Internal server error',
-      message: error.message 
+      success: false,
+      error: errorMessage,
+      errorCode: errorCode,
+      message: errorMessage
     });
   }
 }

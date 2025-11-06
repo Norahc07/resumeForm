@@ -34,6 +34,14 @@ export const uploadResumeImageAndEmail = async (submissionId, imageBase64, fileN
         errorMessage = 'File is too large. The image has been compressed, but it\'s still too big. Please use a smaller file (under 3MB) or compress it manually.';
       } else if (response.status === 404) {
         errorMessage = 'API endpoint not found. Please check if the function is deployed to Vercel.';
+      } else if (response.status === 500) {
+        // Try to get detailed error message from server
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || 'Server error occurred. Please check email configuration in Vercel.';
+        } catch (parseError) {
+          errorMessage = `Server error (${response.status}). Please check Vercel logs and email configuration.`;
+        }
       } else {
         try {
           const errorData = await response.json();
