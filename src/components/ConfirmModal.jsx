@@ -1,0 +1,39 @@
+import Modal from './Modal';
+
+const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message, confirmText = 'Confirm', cancelText = 'Cancel', variant = 'danger' }) => {
+  const handleConfirm = () => {
+    onConfirm();
+    onClose();
+  };
+
+  const buttonStyles = {
+    danger: 'bg-red-600 hover:bg-red-700 text-white',
+    primary: 'bg-blue-600 hover:bg-blue-700 text-white',
+    warning: 'bg-yellow-600 hover:bg-yellow-700 text-white'
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
+      <div className="space-y-4">
+        <p className="text-sm text-gray-500">{message}</p>
+        <div className="flex justify-end space-x-3 pt-4">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={handleConfirm}
+            className={`px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${buttonStyles[variant]}`}
+          >
+            {confirmText}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+};
+
+export default ConfirmModal;
+

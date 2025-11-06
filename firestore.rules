@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to get app ID
+    function getAppId() {
+      return 'resume-builder'; // Change this to match your APP_ID
+    }
+
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/artifacts/$(getAppId())/users/$(request.auth.uid)/roles/admin_status) &&
+             get(/databases/$(database)/documents/artifacts/$(getAppId())/users/$(request.auth.uid)/roles/admin_status).data.isAdmin == true;
+    }
+
+    // Public submissions - anyone can create, only admins can read/update/delete
+    match /artifacts/{appId}/public/data/submissions/{submissionId} {
+      // Allow anonymous users to create submissions
+      allow create: if request.auth != null;
+      
+      // Only admins can read, update, or delete
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Admin roles - only admins can read/write
+    match /artifacts/{appId}/users/{userId}/roles/admin_status {
+      allow read, write: if isAdmin();
+    }
+
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
