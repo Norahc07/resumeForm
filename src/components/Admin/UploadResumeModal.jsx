@@ -12,7 +12,75 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
 
   if (!submission) return null;
 
-  const handleFileSelect = (e) => {
+  // Compress image to reduce file size (returns File object)
+  const compressImage = (file, maxWidth = 1920, maxHeight = 2560, quality = 0.8, targetSizeMB = 2.5) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Calculate new dimensions
+          if (width > height) {
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = (width * maxHeight) / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Recursive compression function
+          const compressWithQuality = (currentQuality) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  reject(new Error('Failed to compress image'));
+                  return;
+                }
+
+                const targetSize = targetSizeMB * 1024 * 1024;
+                
+                if (blob.size <= targetSize || currentQuality <= 0.3) {
+                  // Convert blob to File
+                  const compressedFile = new File([blob], file.name, {
+                    type: file.type || 'image/jpeg',
+                    lastModified: Date.now()
+                  });
+                  resolve(compressedFile);
+                } else {
+                  // Reduce quality and try again
+                  compressWithQuality(currentQuality * 0.8);
+                }
+              },
+              file.type || 'image/jpeg',
+              currentQuality
+            );
+          };
+
+          compressWithQuality(quality);
+        };
+        img.onerror = () => reject(new Error('Failed to load image'));
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+    });
+  };
+
+  const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
@@ -21,20 +89,39 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
         return;
       }
 
-      // Validate file size (max 10MB)
+      // Validate file size (max 10MB before compression)
       if (file.size > 10 * 1024 * 1024) {
-        showToast('File size must be less than 10MB', 'error');
+        showToast('File size must be less than 10MB. Please use a smaller image.', 'error');
         return;
       }
 
-      setSelectedFile(file);
+      // Show compression message for large files
+      if (file.size > 2 * 1024 * 1024) {
+        showToast('Compressing image for optimal upload...', 'info');
+      }
 
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        // Compress image if it's large (compress if > 1MB)
+        let processedFile = file;
+        if (file.size > 1 * 1024 * 1024) {
+          processedFile = await compressImage(file, 1920, 2560, 0.85, 2.5);
+          if (processedFile.size < file.size) {
+            showToast(`Image compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`, 'success');
+          }
+        }
+
+        setSelectedFile(processedFile);
+
+        // Create preview
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreview(reader.result);
+        };
+        reader.readAsDataURL(processedFile);
+      } catch (error) {
+        console.error('Error processing image:', error);
+        showToast('Error processing image. Please try another file.', 'error');
+      }
     }
   };
 
@@ -52,30 +139,90 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
     setIsUploading(true);
 
     try {
+      // Vercel has 4.5MB request body limit, we'll target 2.5MB to be safe (base64 adds ~33% overhead)
+      const maxSize = 2.5 * 1024 * 1024; // 2.5MB
+      
+      // Check file size and compress further if needed
+      let fileToUpload = selectedFile;
+      if (selectedFile.size > maxSize) {
+        showToast('Compressing image further to meet size requirements...', 'info');
+        
+        try {
+          // More aggressive compression
+          fileToUpload = await compressImage(selectedFile, 1600, 2000, 0.7, 2.0);
+          
+          if (fileToUpload.size > maxSize) {
+            // Even more aggressive
+            fileToUpload = await compressImage(selectedFile, 1200, 1600, 0.6, 1.8);
+          }
+          
+          if (fileToUpload.size > maxSize) {
+            showToast('Image is still too large. Please use a smaller file (under 2MB recommended).', 'error');
+            setIsUploading(false);
+            return;
+          }
+          
+          showToast(`Final size: ${(fileToUpload.size / 1024 / 1024).toFixed(2)}MB - Ready to upload`, 'success');
+        } catch (compressionError) {
+          console.error('Compression error:', compressionError);
+          showToast('Unable to compress image further. Please use a smaller file.', 'error');
+          setIsUploading(false);
+          return;
+        }
+      }
+
       // Convert file to base64
       const reader = new FileReader();
-      reader.readAsDataURL(selectedFile);
+      reader.readAsDataURL(fileToUpload);
       
       reader.onload = async () => {
-        const base64Image = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
-        
-        const result = await uploadResumeImageAndEmail(
-          submission.id,
-          base64Image,
-          selectedFile.name,
-          selectedFile.type,
-          submission.email,
-          submission.fullName
-        );
+        try {
+          const base64Image = reader.result.split(',')[1]; // Remove data:image/...;base64, prefix
+          
+          // Check base64 size (base64 is ~33% larger than binary)
+          const base64Size = (base64Image.length * 3) / 4;
+          const maxBase64Size = 3.5 * 1024 * 1024; // 3.5MB for base64 (slightly under 4.5MB Vercel limit)
+          
+          if (base64Size > maxBase64Size) {
+            showToast('Image is too large even after compression. Please use a file under 2MB.', 'error');
+            setIsUploading(false);
+            return;
+          }
+          
+          const result = await uploadResumeImageAndEmail(
+            submission.id,
+            base64Image,
+            fileToUpload.name,
+            fileToUpload.type,
+            submission.email,
+            submission.fullName
+          );
 
-        setIsUploading(false);
+          setIsUploading(false);
 
-        if (result.success) {
-          showToast('Resume image uploaded and sent successfully!', 'success');
-          onSuccess();
-          handleClose();
-        } else {
-          showToast(`Failed to send: ${result.error}`, 'error');
+          if (result.success) {
+            showToast('Resume image uploaded and sent successfully!', 'success');
+            onSuccess();
+            handleClose();
+          } else {
+            // Handle specific error messages
+            if (result.error && result.error.includes('too large')) {
+              showToast('File is too large. Please compress the image or use a smaller file (under 2MB).', 'error');
+            } else {
+              showToast(`Failed to send: ${result.error}`, 'error');
+            }
+          }
+        } catch (error) {
+          setIsUploading(false);
+          const errorMessage = error.message || 'Unknown error occurred';
+          
+          // Handle 413 error specifically
+          if (errorMessage.includes('413') || errorMessage.includes('too large') || errorMessage.includes('Content Too Large')) {
+            showToast('File is too large for upload. Please compress the image or use a smaller file (under 2MB recommended).', 'error');
+          } else {
+            showToast(`Upload failed: ${errorMessage}`, 'error');
+          }
+          console.error('Upload error:', error);
         }
       };
 
@@ -144,7 +291,7 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
                 <span className="font-semibold text-blue-600">Click to upload</span> or drag and drop
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                PNG, JPG, GIF up to 10MB
+                PNG, JPG, GIF (automatically compressed to optimal size)
               </p>
             </div>
           ) : (
@@ -199,10 +346,26 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
                 <p className="text-sm font-medium text-gray-900">{selectedFile.name}</p>
                 <p className="text-xs text-gray-500">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                  {selectedFile.size > 2.5 * 1024 * 1024 && (
+                    <span className="ml-2 text-yellow-600 font-semibold">(Will be compressed further)</span>
+                  )}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-500">Type: {selectedFile.type}</p>
+                <p className={`text-xs mt-1 font-semibold ${
+                  selectedFile.size <= 2.5 * 1024 * 1024 
+                    ? 'text-green-600' 
+                    : selectedFile.size <= 3 * 1024 * 1024
+                    ? 'text-yellow-600'
+                    : 'text-red-600'
+                }`}>
+                  {selectedFile.size <= 2.5 * 1024 * 1024 
+                    ? '✓ Ready to upload' 
+                    : selectedFile.size <= 3 * 1024 * 1024
+                    ? '⚠ Will compress'
+                    : '⚠ Needs compression'}
+                </p>
               </div>
             </div>
           </div>

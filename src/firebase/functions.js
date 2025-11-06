@@ -27,8 +27,23 @@ export const uploadResumeImageAndEmail = async (submissionId, imageBase64, fileN
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      let errorMessage = 'Unknown error';
+      
+      // Handle specific error codes
+      if (response.status === 413) {
+        errorMessage = 'File is too large. The image has been compressed, but it\'s still too big. Please use a smaller file (under 3MB) or compress it manually.';
+      } else if (response.status === 404) {
+        errorMessage = 'API endpoint not found. Please check if the function is deployed to Vercel.';
+      } else {
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorData.message || `HTTP error! status: ${response.status}`;
+        } catch {
+          errorMessage = `HTTP error! status: ${response.status}`;
+        }
+      }
+      
+      throw new Error(errorMessage);
     }
 
     const result = await response.json();
