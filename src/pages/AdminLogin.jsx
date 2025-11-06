@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { signInAdmin } from '../firebase/auth';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../hooks/useAuth';
+import logo from '../assets/resumeApp_logo.png';
 
 const AdminLogin = () => {
   const [username, setUsername] = useState('');
@@ -53,9 +54,18 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Admin Login</h2>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center px-4">
+      <div className="max-w-md w-full bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-8">
+        <div className="text-center mb-6">
+          <img 
+            src={logo} 
+            alt="Resume Form Logo" 
+            className="h-16 w-16 mx-auto mb-4 object-contain"
+          />
+          <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            Admin Login
+          </h2>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">

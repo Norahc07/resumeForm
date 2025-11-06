@@ -1,4 +1,5 @@
 import ResumeForm from '../components/ResumeForm/ResumeForm';
+import logo from '../assets/resumeApp_logo.png';
 
 const Home = () => {
   return (
@@ -6,6 +7,13 @@ const Home = () => {
       <header className="bg-white/80 backdrop-blur-md shadow-lg border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
+            <div className="flex justify-center items-center mb-4">
+              <img 
+                src={logo} 
+                alt="Resume Form Logo" 
+                className="h-20 w-20 md:h-24 md:w-24 object-contain animate-fadeIn"
+              />
+            </div>
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Resume Form
             </h1>

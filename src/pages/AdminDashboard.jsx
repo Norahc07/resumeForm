@@ -8,6 +8,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AdminSubmissionView from '../components/Admin/AdminSubmissionView';
 import UploadResumeModal from '../components/Admin/UploadResumeModal';
 import ShareLinkModal from '../components/Admin/ShareLinkModal';
+import logo from '../assets/resumeApp_logo.png';
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading } = useAuth();
@@ -93,11 +94,18 @@ const AdminDashboard = () => {
       <header className="bg-white/90 backdrop-blur-md shadow-lg border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Admin Dashboard
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">Manage and process resume submissions</p>
+            <div className="flex items-center space-x-4">
+              <img 
+                src={logo} 
+                alt="Resume Form Logo" 
+                className="h-12 w-12 object-contain"
+              />
+              <div>
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Admin Dashboard
+                </h1>
+                <p className="text-sm text-gray-600 mt-1">Manage and process resume submissions</p>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
               <button
