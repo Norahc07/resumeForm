@@ -6,8 +6,8 @@ import { updateSubmission } from './firestore';
  */
 export const uploadResumeImageAndEmail = async (submissionId, imageBase64, fileName, fileType, userEmail, userName) => {
   try {
-    // Get the API endpoint - use environment variable or default to Vercel deployment
-    const apiUrl = import.meta.env.VITE_API_URL || 'https://resume-form-eight.vercel.app';
+    // Get the API endpoint - use current origin (works for both production and preview deployments)
+    const apiUrl = import.meta.env.VITE_API_URL || window.location.origin;
     
     const response = await fetch(`${apiUrl}/api/upload-resume`, {
       method: 'POST',
