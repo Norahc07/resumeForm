@@ -35,9 +35,10 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
-# Functions
+# Functions (archived - now using Vercel Serverless Functions)
 functions/node_modules
 functions/.runtimeconfig.json
+_archive/
 
 # Service Account Keys (NEVER commit these!)
 serviceAccountKey.json

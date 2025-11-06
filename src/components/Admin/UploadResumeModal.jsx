@@ -63,7 +63,9 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
           submission.id,
           base64Image,
           selectedFile.name,
-          selectedFile.type
+          selectedFile.type,
+          submission.email,
+          submission.fullName
         );
 
         setIsUploading(false);

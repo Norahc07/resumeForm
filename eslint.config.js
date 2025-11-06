@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default [
-  { ignores: ['dist', 'functions/**', 'node_modules/**', 'tailwind.config.js', 'postcss.config.js'] },
+  { ignores: ['dist', '_archive/**', 'node_modules/**', 'tailwind.config.js', 'postcss.config.js'] },
   {
     files: ['**/*.{js,jsx}'],
     languageOptions: {
@@ -35,7 +35,7 @@ export default [
     },
   },
   {
-    files: ['functions/**/*.js'],
+    files: ['api/**/*.js', '_archive/**/*.js'],
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.node,
