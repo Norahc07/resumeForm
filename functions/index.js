@@ -9,7 +9,102 @@ admin.initializeApp();
 const APP_ID = process.env.APP_ID || 'resume-builder';
 
 /**
- * Convert resume HTML to image and send via email
+ * Upload resume image and send via email to user
+ */
+exports.uploadResumeImageAndEmail = functions.https.onCall(async (data, context) => {
+  // Verify admin authentication
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { submissionId, imageBase64, fileName, fileType } = data;
+
+  if (!submissionId || !imageBase64) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'submissionId and imageBase64 are required'
+    );
+  }
+
+  try {
+    // Get submission data from Firestore
+    const submissionDoc = await admin
+      .firestore()
+      .doc(`artifacts/${APP_ID}/public/data/submissions/${submissionId}`)
+      .get();
+
+    if (!submissionDoc.exists) {
+      throw new functions.https.HttpsError('not-found', 'Submission not found');
+    }
+
+    const submissionData = submissionDoc.data();
+
+    // Get user email from submission
+    const userEmail = submissionData.email;
+    if (!userEmail) {
+      throw new functions.https.HttpsError('invalid-argument', 'User email not found in submission');
+    }
+
+    // Convert base64 to buffer
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+
+    // Configure email transporter
+    const transporter = nodemailer.createTransport({
+      service: 'gmail', // Change to your email service
+      auth: {
+        user: functions.config().email?.user || process.env.EMAIL_USER,
+        pass: functions.config().email?.password || process.env.EMAIL_PASSWORD
+      }
+    });
+
+    // Send email with image attachment
+    const mailOptions = {
+      from: functions.config().email?.user || process.env.EMAIL_USER,
+      to: userEmail,
+      subject: `Your Resume - ${submissionData.fullName || 'Resume'}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #2563eb;">Your Resume is Ready!</h2>
+          <p>Dear ${submissionData.fullName || 'User'},</p>
+          <p>Thank you for submitting your resume. Please find your completed resume attached to this email.</p>
+          <p>If you have any questions or need to make changes, please contact us.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+          <p style="color: #666; font-size: 12px;">
+            <strong>Submitted:</strong> ${new Date().toLocaleDateString()}<br>
+            <strong>Email:</strong> ${userEmail}
+          </p>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: fileName || `resume-${submissionId}.png`,
+          content: imageBuffer,
+          contentType: fileType || 'image/png'
+        }
+      ]
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    // Update submission status to 'completed'
+    await admin
+      .firestore()
+      .doc(`artifacts/${APP_ID}/public/data/submissions/${submissionId}`)
+      .update({
+        status: 'completed',
+        completedAt: admin.firestore.FieldValue.serverTimestamp(),
+        resumeSentAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    return { success: true, message: 'Resume image uploaded and emailed successfully' };
+  } catch (error) {
+    console.error('Error in uploadResumeImageAndEmail:', error);
+    throw new functions.https.HttpsError('internal', error.message);
+  }
+});
+
+/**
+ * Convert resume HTML to image and send via email (DEPRECATED - kept for backward compatibility)
  */
 exports.convertResumeToImageAndEmail = functions.https.onCall(async (data, context) => {
   // Verify admin authentication

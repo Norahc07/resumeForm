@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { updateSubmission, deleteSubmission } from '../../firebase/firestore';
-import { convertResumeToImageAndEmail } from '../../firebase/functions';
 import { useToast } from '../../context/ToastContext';
 import ConfirmModal from '../ConfirmModal';
-import Modal from '../Modal';
+import UploadResumeModal from './UploadResumeModal';
 
 const AdminSubmissionView = ({ submission, onBack }) => {
   const { showToast } = useToast();
@@ -11,8 +10,7 @@ const AdminSubmissionView = ({ submission, onBack }) => {
   const [editedData, setEditedData] = useState(submission);
   const [isSaving, setIsSaving] = useState(false);
   const [deleteModal, setDeleteModal] = useState({ isOpen: false });
-  const [emailModal, setEmailModal] = useState({ isOpen: false, email: '' });
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadModal, setUploadModal] = useState({ isOpen: false });
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -36,23 +34,6 @@ const AdminSubmissionView = ({ submission, onBack }) => {
     }
   };
 
-  const handleConvertAndEmail = async () => {
-    if (!emailModal.email) {
-      showToast('Please enter a recipient email', 'error');
-      return;
-    }
-
-    setIsProcessing(true);
-    const result = await convertResumeToImageAndEmail(submission.id, emailModal.email);
-    setIsProcessing(false);
-    setEmailModal({ isOpen: false, email: '' });
-
-    if (result.success) {
-      showToast('Resume converted and emailed successfully!', 'success');
-    } else {
-      showToast(`Failed to send email: ${result.error}`, 'error');
-    }
-  };
 
   const formatDate = (timestamp) => {
     if (!timestamp) return 'N/A';
@@ -67,13 +48,13 @@ const AdminSubmissionView = ({ submission, onBack }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <header className="bg-white/90 backdrop-blur-md shadow-lg border-b border-gray-200/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <button
               onClick={onBack}
-              className="text-blue-600 hover:text-blue-800 flex items-center"
+              className="text-blue-600 hover:text-blue-800 flex items-center font-semibold transition-all duration-200 hover:scale-105"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -82,22 +63,23 @@ const AdminSubmissionView = ({ submission, onBack }) => {
             </button>
             <div className="flex space-x-3">
               <button
-                onClick={() => setEmailModal({ isOpen: true, email: '' })}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+                onClick={() => setUploadModal({ isOpen: true })}
+                disabled={submission.status === 'completed'}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
               >
-                Convert & Email
+                {submission.status === 'completed' ? '✓ Completed' : 'Upload & Send'}
               </button>
               {!isEditing ? (
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => setDeleteModal({ isOpen: true })}
-                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg hover:from-red-700 hover:to-rose-700 focus:outline-none focus:ring-4 focus:ring-red-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
                     Delete
                   </button>
@@ -107,16 +89,16 @@ const AdminSubmissionView = ({ submission, onBack }) => {
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
-                    {isSaving ? 'Saving...' : 'Save'}
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button
                     onClick={() => {
                       setIsEditing(false);
                       setEditedData(submission);
                     }}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                    className="px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
                     Cancel
                   </button>
@@ -128,10 +110,12 @@ const AdminSubmissionView = ({ submission, onBack }) => {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200 p-8 space-y-8">
           {/* Personal Information */}
-          <section>
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Personal Information</h2>
+          <section className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+              Personal Information
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
@@ -211,8 +195,8 @@ const AdminSubmissionView = ({ submission, onBack }) => {
 
           {/* Summary */}
           {submission.summary && (
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Professional Summary</h2>
+            <section className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-xl p-6 border border-gray-200">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Summary</h2>
               {isEditing ? (
                 <textarea
                   value={editedData.summary || ''}
@@ -228,11 +212,11 @@ const AdminSubmissionView = ({ submission, onBack }) => {
 
           {/* Experience */}
           {submission.experiences && submission.experiences.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Work Experience</h2>
-              <div className="space-y-4">
+            <section className="bg-gradient-to-br from-white to-blue-50 rounded-xl p-6 border border-blue-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Work Experience</h2>
+              <div className="space-y-5">
                 {submission.experiences.map((exp, index) => (
-                  <div key={index} className="border-l-4 border-blue-500 pl-4">
+                  <div key={index} className="border-l-4 border-blue-500 pl-5 bg-white rounded-r-lg p-4 shadow-sm">
                     <h3 className="font-semibold text-gray-900">{exp.jobTitle} at {exp.company}</h3>
                     <p className="text-sm text-gray-600">
                       {exp.startDate} - {exp.current ? 'Present' : exp.endDate || 'N/A'}
@@ -248,11 +232,11 @@ const AdminSubmissionView = ({ submission, onBack }) => {
 
           {/* Education */}
           {submission.educations && submission.educations.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Education</h2>
-              <div className="space-y-4">
+            <section className="bg-gradient-to-br from-white to-green-50 rounded-xl p-6 border border-green-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Education</h2>
+              <div className="space-y-5">
                 {submission.educations.map((edu, index) => (
-                  <div key={index} className="border-l-4 border-green-500 pl-4">
+                  <div key={index} className="border-l-4 border-green-500 pl-5 bg-white rounded-r-lg p-4 shadow-sm">
                     <h3 className="font-semibold text-gray-900">{edu.degree}</h3>
                     <p className="text-gray-600">{edu.institution}</p>
                     {edu.startDate && edu.endDate && (
@@ -271,13 +255,13 @@ const AdminSubmissionView = ({ submission, onBack }) => {
 
           {/* Skills */}
           {submission.skills && submission.skills.length > 0 && (
-            <section>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Skills</h2>
-              <div className="flex flex-wrap gap-2">
+            <section className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Skills</h2>
+              <div className="flex flex-wrap gap-3">
                 {submission.skills.map((skill, index) => (
                   <span
                     key={index}
-                    className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 rounded-full text-sm font-semibold border border-blue-200 shadow-sm"
                   >
                     {skill}
                   </span>
@@ -287,18 +271,31 @@ const AdminSubmissionView = ({ submission, onBack }) => {
           )}
 
           {/* Metadata */}
-          <section className="pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              <strong>Submitted:</strong> {formatDate(submission.createdAt)}
-            </p>
-            {submission.updatedAt && (
-              <p className="text-sm text-gray-500">
-                <strong>Last Updated:</strong> {formatDate(submission.updatedAt)}
-              </p>
-            )}
-            <p className="text-sm text-gray-500">
-              <strong>Status:</strong> {submission.status || 'pending'}
-            </p>
+          <section className="pt-6 border-t-2 border-gray-200 bg-gray-50 rounded-lg p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Submitted</p>
+                <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(submission.createdAt)}</p>
+              </div>
+              {submission.updatedAt && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Last Updated</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{formatDate(submission.updatedAt)}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</p>
+                <span className={`inline-flex mt-1 px-3 py-1 text-xs font-bold rounded-full ${
+                  submission.status === 'completed' ? 'bg-green-100 text-green-800' :
+                  submission.status === 'pending' || !submission.status ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {submission.status === 'completed' ? '✓ Completed' : 
+                   submission.status === 'pending' || !submission.status ? '⏳ Pending' : 
+                   submission.status}
+                </span>
+              </div>
+            </div>
           </section>
         </div>
       </main>
@@ -313,46 +310,15 @@ const AdminSubmissionView = ({ submission, onBack }) => {
         variant="danger"
       />
 
-      <Modal
-        isOpen={emailModal.isOpen}
-        onClose={() => setEmailModal({ isOpen: false, email: '' })}
-        title="Convert Resume to Image and Email"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Enter the recipient email address. The resume will be converted to an image and sent as an attachment.
-          </p>
-          <div>
-            <label htmlFor="recipientEmail" className="block text-sm font-medium text-gray-700 mb-1">
-              Recipient Email *
-            </label>
-            <input
-              type="email"
-              id="recipientEmail"
-              value={emailModal.email}
-              onChange={(e) => setEmailModal({ ...emailModal, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="recipient@example.com"
-            />
-          </div>
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              onClick={() => setEmailModal({ isOpen: false, email: '' })}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConvertAndEmail}
-              disabled={isProcessing || !emailModal.email}
-              className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50"
-            >
-              {isProcessing ? 'Processing...' : 'Send Email'}
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <UploadResumeModal
+        isOpen={uploadModal.isOpen}
+        onClose={() => setUploadModal({ isOpen: false })}
+        submission={submission}
+        onSuccess={() => {
+          setUploadModal({ isOpen: false });
+          showToast('Resume image uploaded and sent successfully!', 'success');
+        }}
+      />
     </div>
   );
 };

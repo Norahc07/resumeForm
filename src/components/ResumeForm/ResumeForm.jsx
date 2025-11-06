@@ -3,6 +3,7 @@ import PersonalInfoStep from './PersonalInfoStep';
 import ExperienceStep from './ExperienceStep';
 import EducationStep from './EducationStep';
 import SkillsStep from './SkillsStep';
+import SubmissionSuccess from './SubmissionSuccess';
 import { useToast } from '../../context/ToastContext';
 import { signInAnonymous } from '../../firebase/auth';
 import { submitResume as submitToFirestore } from '../../firebase/firestore';
@@ -22,6 +23,8 @@ const ResumeForm = () => {
     summary: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedData, setSubmittedData] = useState(null);
   const { showToast } = useToast();
 
   const totalSteps = 4;
@@ -95,20 +98,9 @@ const ResumeForm = () => {
       const submitResult = await submitToFirestore(formData);
       if (submitResult.success) {
         showToast('Resume submitted successfully!', 'success');
-        // Reset form
-        setFormData({
-          fullName: '',
-          email: '',
-          phone: '',
-          address: '',
-          linkedin: '',
-          website: '',
-          experiences: [{}],
-          educations: [{}],
-          skills: [],
-          summary: ''
-        });
-        setCurrentStep(1);
+        // Store submitted data and show success page
+        setSubmittedData({ ...formData });
+        setIsSubmitted(true);
       } else {
         showToast(`Submission failed: ${submitResult.error}`, 'error');
       }
@@ -119,6 +111,48 @@ const ResumeForm = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleEditData = (updatedData) => {
+    setFormData(updatedData);
+    setSubmittedData(updatedData);
+  };
+
+  const handleResubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const authResult = await signInAnonymous();
+      if (!authResult.success) {
+        showToast('Failed to authenticate. Please try again.', 'error');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const submitResult = await submitToFirestore(formData);
+      if (submitResult.success) {
+        showToast('Resume resubmitted successfully!', 'success');
+        setSubmittedData({ ...formData });
+      } else {
+        showToast(`Resubmission failed: ${submitResult.error}`, 'error');
+      }
+    } catch (error) {
+      showToast('An unexpected error occurred. Please try again.', 'error');
+      console.error('Resubmit error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show success page if submitted
+  if (isSubmitted && submittedData) {
+    return (
+      <SubmissionSuccess
+        formData={submittedData}
+        onEdit={handleEditData}
+        onResubmit={handleResubmit}
+        isResubmitting={isSubmitting}
+      />
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">

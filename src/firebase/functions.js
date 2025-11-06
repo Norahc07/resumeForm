@@ -4,15 +4,20 @@ import app from './config';
 const functions = getFunctions(app);
 
 /**
- * Trigger resume-to-image conversion and email delivery
+ * Upload resume image and send via email to user
  */
-export const convertResumeToImageAndEmail = async (submissionId, recipientEmail) => {
+export const uploadResumeImageAndEmail = async (submissionId, imageBase64, fileName, fileType) => {
   try {
-    const convertAndEmail = httpsCallable(functions, 'convertResumeToImageAndEmail');
-    const result = await convertAndEmail({ submissionId, recipientEmail });
+    const uploadAndEmail = httpsCallable(functions, 'uploadResumeImageAndEmail');
+    const result = await uploadAndEmail({ 
+      submissionId, 
+      imageBase64, 
+      fileName, 
+      fileType 
+    });
     return { success: true, data: result.data };
   } catch (error) {
-    console.error('Error converting resume to image:', error);
+    console.error('Error uploading resume image:', error);
     return { success: false, error: error.message };
   }
 };
