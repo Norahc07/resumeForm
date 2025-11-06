@@ -8,10 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png'],
+      includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Resume Builder PWA',
-        short_name: 'Resume Builder',
+        name: 'Resume Form PWA',
+        short_name: 'Resume Form',
         description: 'A progressive web application for building and submitting professional resumes',
         theme_color: '#2563eb',
         background_color: '#ffffff',
@@ -21,15 +21,15 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/icon-192.png',
+            src: '/vite.svg',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           },
           {
-            src: '/icon-512.png',
+            src: '/vite.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]

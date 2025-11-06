@@ -38,3 +38,12 @@ ui-debug.log
 # Functions
 functions/node_modules
 functions/.runtimeconfig.json
+
+# Service Account Keys (NEVER commit these!)
+serviceAccountKey.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!firebase.json
+!firestore.indexes.json

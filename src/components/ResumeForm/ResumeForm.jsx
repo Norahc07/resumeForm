@@ -122,20 +122,20 @@ const ResumeForm = () => {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="bg-white rounded-lg shadow-md p-6 sm:p-8">
+      <div className="card p-8 sm:p-10">
         {/* Progress indicator */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-700">
+        <div className="mb-10">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-semibold text-gray-700">
               Step {currentStep} of {totalSteps}
             </span>
-            <span className="text-sm text-gray-500">
+            <span className="text-sm font-medium text-blue-600">
               {Math.round((currentStep / totalSteps) * 100)}% Complete
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner overflow-hidden">
             <div
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 h-3 rounded-full transition-all duration-500 ease-out shadow-lg"
               style={{ width: `${(currentStep / totalSteps) * 100}%` }}
             ></div>
           </div>
@@ -164,31 +164,45 @@ const ResumeForm = () => {
         />
 
         {/* Navigation buttons */}
-        <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+        <div className="flex justify-between items-center mt-10 pt-8 border-t border-gray-200">
           <button
             type="button"
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="px-6 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-md"
           >
-            Previous
+            ← Previous
           </button>
           {currentStep < totalSteps ? (
             <button
               type="button"
               onClick={handleNext}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="btn-primary"
             >
-              Next
+              Next →
             </button>
           ) : (
             <button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-green-500"
+              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+                         rounded-lg font-semibold shadow-lg hover:shadow-xl
+                         transform hover:scale-105 active:scale-100
+                         transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-300
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {isSubmitting ? 'Submitting...' : 'Submit Resume'}
+              {isSubmitting ? (
+                <span className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Submitting...
+                </span>
+              ) : (
+                '✓ Submit Resume'
+              )}
             </button>
           )}
         </div>

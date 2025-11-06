@@ -22,9 +22,12 @@ service cloud.firestore {
       allow read, update, delete: if isAdmin();
     }
 
-    // Admin roles - only admins can read/write
+    // Admin roles - users can read their own admin status, only admins can write
     match /artifacts/{appId}/users/{userId}/roles/admin_status {
-      allow read, write: if isAdmin();
+      // Allow users to read their own admin status (needed for authentication check)
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Only admins can write admin status
+      allow write: if isAdmin();
     }
 
     // Deny all other access
