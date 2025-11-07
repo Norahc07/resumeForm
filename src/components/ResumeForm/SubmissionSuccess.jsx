@@ -44,9 +44,15 @@ const SubmissionSuccess = ({ formData, onEdit, onResubmit, isResubmitting }) => 
           <p className="text-lg text-gray-600 mb-2">
             Thank you for submitting your resume. Your information has been received.
           </p>
-          <p className="text-sm text-gray-500">
-            A soft copy of your resume will be sent to <strong>{formData.email}</strong> once it's processed.
-          </p>
+          {formData.email ? (
+            <p className="text-sm text-gray-500">
+              A soft copy of your resume will be sent to <strong>{formData.email}</strong> once it's processed.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-500">
+              Note: No email address was provided. Please contact the administrator to receive your resume.
+            </p>
+          )}
         </div>
 
         {/* Review Section */}
@@ -83,6 +89,17 @@ const SubmissionSuccess = ({ formData, onEdit, onResubmit, isResubmitting }) => 
                 </button>
               )}
             </div>
+            
+            {/* Photo Display */}
+            {formData.photo && (
+              <div className="mb-4 flex justify-center">
+                <img
+                  src={formData.photo}
+                  alt="Profile"
+                  className="w-24 h-24 object-cover rounded-full border-4 border-white shadow-lg"
+                />
+              </div>
+            )}
 
             {editingSection === 'personal' ? (
               <div className="space-y-4">
@@ -120,6 +137,30 @@ const SubmissionSuccess = ({ formData, onEdit, onResubmit, isResubmitting }) => 
                   <div>
                     <p className="text-sm font-medium text-gray-500">Phone</p>
                     <p className="text-base text-gray-900">{formData.phone}</p>
+                  </div>
+                )}
+                {formData.birthday && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Birthday</p>
+                    <p className="text-base text-gray-900">{new Date(formData.birthday).toLocaleDateString()}</p>
+                  </div>
+                )}
+                {formData.civilStatus && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Civil Status</p>
+                    <p className="text-base text-gray-900">{formData.civilStatus}</p>
+                  </div>
+                )}
+                {formData.citizenship && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Citizenship</p>
+                    <p className="text-base text-gray-900">{formData.citizenship}</p>
+                  </div>
+                )}
+                {formData.religion && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Religion</p>
+                    <p className="text-base text-gray-900">{formData.religion}</p>
                   </div>
                 )}
                 {formData.address && (

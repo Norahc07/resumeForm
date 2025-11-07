@@ -116,6 +116,20 @@ const AdminSubmissionView = ({ submission, onBack }) => {
             <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-6">
               Personal Information
             </h2>
+            
+            {/* Photo Display */}
+            {submission.photo && (
+              <div className="mb-6 flex justify-center">
+                <div className="relative">
+                  <img
+                    src={submission.photo}
+                    alt="Profile"
+                    className="w-32 h-32 object-cover rounded-full border-4 border-white shadow-lg"
+                  />
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700">Full Name</label>
@@ -156,6 +170,72 @@ const AdminSubmissionView = ({ submission, onBack }) => {
                   <p className="mt-1 text-gray-900">{submission.phone || 'N/A'}</p>
                 )}
               </div>
+              {submission.birthday && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Birthday</label>
+                  {isEditing ? (
+                    <input
+                      type="date"
+                      value={editedData.birthday || ''}
+                      onChange={(e) => setEditedData({ ...editedData, birthday: e.target.value })}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  ) : (
+                    <p className="mt-1 text-gray-900">{new Date(submission.birthday).toLocaleDateString() || 'N/A'}</p>
+                  )}
+                </div>
+              )}
+              {submission.civilStatus && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Civil Status</label>
+                  {isEditing ? (
+                    <select
+                      value={editedData.civilStatus || ''}
+                      onChange={(e) => setEditedData({ ...editedData, civilStatus: e.target.value })}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
+                    >
+                      <option value="">Select civil status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                      <option value="Separated">Separated</option>
+                    </select>
+                  ) : (
+                    <p className="mt-1 text-gray-900">{submission.civilStatus}</p>
+                  )}
+                </div>
+              )}
+              {submission.citizenship && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Citizenship</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedData.citizenship || ''}
+                      onChange={(e) => setEditedData({ ...editedData, citizenship: e.target.value })}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  ) : (
+                    <p className="mt-1 text-gray-900">{submission.citizenship}</p>
+                  )}
+                </div>
+              )}
+              {submission.religion && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Religion</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedData.religion || ''}
+                      onChange={(e) => setEditedData({ ...editedData, religion: e.target.value })}
+                      className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md"
+                    />
+                  ) : (
+                    <p className="mt-1 text-gray-900">{submission.religion}</p>
+                  )}
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700">LinkedIn</label>
                 {isEditing ? (

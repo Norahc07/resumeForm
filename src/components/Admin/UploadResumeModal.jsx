@@ -144,7 +144,7 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
     }
 
     if (!submission.email) {
-      showToast('Submission email is missing. Cannot send resume.', 'error');
+      showToast('Submission email is missing. Please add an email address to the submission before uploading the resume.', 'error');
       return;
     }
 

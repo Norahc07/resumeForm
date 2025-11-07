@@ -17,6 +17,11 @@ const ResumeForm = () => {
     address: '',
     linkedin: '',
     website: '',
+    photo: '',
+    birthday: '',
+    civilStatus: '',
+    citizenship: '',
+    religion: '',
     experiences: [{}],
     educations: [{}],
     skills: [],
@@ -32,11 +37,16 @@ const ResumeForm = () => {
   const validateStep = (step) => {
     switch (step) {
       case 1: {
-        if (!formData.fullName || !formData.email) {
-          showToast('Please fill in all required fields (Name and Email)', 'error');
+        if (!formData.fullName) {
+          showToast('Please fill in the required field (Full Name)', 'error');
           return false;
         }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        if (!formData.photo) {
+          showToast('Please upload or capture a profile photo', 'error');
+          return false;
+        }
+        // Validate email format only if email is provided
+        if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
           showToast('Please enter a valid email address', 'error');
           return false;
         }
