@@ -49,37 +49,39 @@ const AdminSubmissionView = ({ submission, onBack }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <header className="bg-white/90 backdrop-blur-md shadow-lg border-b border-gray-200/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
+      <header className="bg-white/90 backdrop-blur-md shadow-lg border-b border-gray-200/50 sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
             <button
               onClick={onBack}
-              className="text-blue-600 hover:text-blue-800 flex items-center font-semibold transition-all duration-200 hover:scale-105"
+              className="text-blue-600 hover:text-blue-800 flex items-center font-semibold transition-all duration-200 hover:scale-105 text-sm sm:text-base"
             >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </button>
-            <div className="flex space-x-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3 w-full sm:w-auto justify-end">
               <button
                 onClick={() => setUploadModal({ isOpen: true })}
                 disabled={submission.status === 'completed'}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
+                className="px-3 py-2 sm:px-4 text-xs sm:text-sm bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg font-semibold"
               >
-                {submission.status === 'completed' ? '✓ Completed' : 'Upload & Send'}
+                {submission.status === 'completed' ? '✓ Done' : <span className="hidden sm:inline">Upload & Send</span>}
+                {submission.status !== 'completed' && <span className="sm:hidden">Upload</span>}
               </button>
               {!isEditing ? (
                 <>
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+                    className="px-3 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => setDeleteModal({ isOpen: true })}
-                    className="px-5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg hover:from-red-700 hover:to-rose-700 focus:outline-none focus:ring-4 focus:ring-red-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+                    className="px-3 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-lg hover:from-red-700 hover:to-rose-700 focus:outline-none focus:ring-4 focus:ring-red-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
                     Delete
                   </button>
@@ -89,16 +91,16 @@ const AdminSubmissionView = ({ submission, onBack }) => {
                   <button
                     onClick={handleSave}
                     disabled={isSaving}
-                    className="px-5 py-2.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+                    className="px-3 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 focus:outline-none focus:ring-4 focus:ring-green-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
-                    {isSaving ? 'Saving...' : 'Save Changes'}
+                    {isSaving ? 'Saving...' : 'Save'}
                   </button>
                   <button
                     onClick={() => {
                       setIsEditing(false);
                       setEditedData(submission);
                     }}
-                    className="px-5 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+                    className="px-3 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-300 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
                   >
                     Cancel
                   </button>

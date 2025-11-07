@@ -165,15 +165,15 @@ const ResumeForm = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="card p-8 sm:p-10">
+    <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 md:py-8">
+      <div className="card p-4 sm:p-6 md:p-8 lg:p-10">
         {/* Progress indicator */}
-        <div className="mb-10">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-semibold text-gray-700">
+        <div className="mb-6 sm:mb-8 md:mb-10">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <span className="text-xs sm:text-sm font-semibold text-gray-700">
               Step {currentStep} of {totalSteps}
             </span>
-            <span className="text-sm font-medium text-blue-600">
+            <span className="text-xs sm:text-sm font-medium text-blue-600">
               {Math.round((currentStep / totalSteps) * 100)}% Complete
             </span>
           </div>
@@ -208,20 +208,21 @@ const ResumeForm = () => {
         />
 
         {/* Navigation buttons */}
-        <div className="flex justify-between items-center mt-10 pt-8 border-t border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0 mt-6 sm:mt-8 md:mt-10 pt-6 sm:pt-8 border-t border-gray-200">
           <button
             type="button"
             onClick={handlePrevious}
             disabled={currentStep === 1}
-            className="btn-secondary disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-md"
+            className="btn-secondary w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-md text-sm sm:text-base"
           >
-            ← Previous
+            <span className="hidden sm:inline">← Previous</span>
+            <span className="sm:hidden">← Back</span>
           </button>
           {currentStep < totalSteps ? (
             <button
               type="button"
               onClick={handleNext}
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto text-sm sm:text-base"
             >
               Next →
             </button>
@@ -230,22 +231,26 @@ const ResumeForm = () => {
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white 
+              className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white 
                          rounded-lg font-semibold shadow-lg hover:shadow-xl
                          transform hover:scale-105 active:scale-100
                          transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-green-300
-                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                         disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm sm:text-base"
             >
               {isSubmitting ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Submitting...
+                  <span className="hidden sm:inline">Submitting...</span>
+                  <span className="sm:hidden">Submitting...</span>
                 </span>
               ) : (
-                '✓ Submit Resume'
+                <>
+                  <span className="hidden sm:inline">✓ Submit Resume</span>
+                  <span className="sm:hidden">✓ Submit</span>
+                </>
               )}
             </button>
           )}
