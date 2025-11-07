@@ -8,7 +8,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import AdminSubmissionView from '../components/Admin/AdminSubmissionView';
 import UploadResumeModal from '../components/Admin/UploadResumeModal';
 import ShareLinkModal from '../components/Admin/ShareLinkModal';
-import logo from '../assets/resumeApp_logo.png';
+import logo from '../assets/resumeAppLogo.png';
 
 const AdminDashboard = () => {
   const { user, isAdmin, loading } = useAuth();

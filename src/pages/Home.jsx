@@ -1,5 +1,5 @@
 import ResumeForm from '../components/ResumeForm/ResumeForm';
-import logo from '../assets/resumeApp_logo.png';
+import logo from '../assets/resumeAppLogo.png';
 
 const Home = () => {
   return (

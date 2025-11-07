@@ -10,7 +10,7 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico'],
       manifest: {
-        name: 'Resume Form PWA',
+        name: 'Resume Form',
         short_name: 'Resume Form',
         description: 'A progressive web application for building and submitting professional resumes',
         theme_color: '#2563eb',
@@ -21,13 +21,13 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/resumeApp_logo.png',
+            src: '/resumeAppLogo.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
           },
           {
-            src: '/resumeApp_logo.png',
+            src: '/resumeAppLogo.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { signInAdmin } from '../firebase/auth';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../hooks/useAuth';
-import logo from '../assets/resumeApp_logo.png';
+import logo from '../assets/resumeAppLogo.png';
 
 const AdminLogin = () => {
   const [username, setUsername] = useState('');
