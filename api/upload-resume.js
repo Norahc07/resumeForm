@@ -169,7 +169,7 @@ module.exports = async (req, res) => {
                           📎 Your Completed Resume
                         </p>
                         <p style="margin: 0; color: #1e3a8a; font-size: 14px; line-height: 1.6;">
-                          Please find your completed resume attached to this email. You can download and use it for your job applications.
+                          Please find your completed resume attached to this email (as an image or PDF file). You can download and use it for your job applications.
                         </p>
                       </div>
                       
@@ -223,14 +223,14 @@ module.exports = async (req, res) => {
       `,
       attachments: [
         {
-          filename: fileName || `resume-${submissionId}.png`,
+          filename: fileName || `resume-${submissionId}.${fileType === 'application/pdf' ? 'pdf' : 'png'}`,
           content: imageBuffer,
-          contentType: fileType || 'image/png',
+          contentType: fileType || (fileName?.endsWith('.pdf') ? 'application/pdf' : 'image/png'),
         },
       ],
     };
 
-    // Send email with image attachment
+    // Send email with resume attachment (image or PDF)
     const emailResult = await transporter.sendMail(mailOptions);
     console.log('Email sent successfully:', {
       messageId: emailResult.messageId,
@@ -270,8 +270,8 @@ module.exports = async (req, res) => {
     let errorCode = error.code || 'UNKNOWN_ERROR';
     
     // Handle specific error types
-    if (error.code === 'EAUTH' || errorMessage.includes('Invalid login')) {
-      errorMessage = 'Email authentication failed. Please check EMAIL_USER and EMAIL_PASSWORD in Vercel environment variables.';
+    if (error.code === 'EAUTH' || errorMessage.includes('Invalid login') || errorMessage.includes('BadCredentials') || errorMessage.includes('Username and Password not accepted')) {
+      errorMessage = 'Gmail authentication failed. You must use a Gmail App Password (not your regular password). Steps: 1) Enable 2-Factor Authentication, 2) Generate App Password at myaccount.google.com/apppasswords, 3) Use the 16-character App Password as EMAIL_PASSWORD in Vercel environment variables.';
       errorCode = 'EMAIL_AUTH_ERROR';
     } else if (error.code === 'ECONNECTION' || errorMessage.includes('connection')) {
       errorMessage = 'Failed to connect to email service. Please check your email configuration.';

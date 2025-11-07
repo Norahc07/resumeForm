@@ -83,51 +83,63 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
   const handleFileSelect = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
-      if (!file.type.startsWith('image/')) {
-        showToast('Please select an image file (PNG, JPG, etc.)', 'error');
+      // Validate file type - accept both images and PDFs
+      const isImage = file.type.startsWith('image/');
+      const isPDF = file.type === 'application/pdf';
+      
+      if (!isImage && !isPDF) {
+        showToast('Please select an image file (PNG, JPG, etc.) or a PDF file', 'error');
         return;
       }
 
-      // Validate file size (max 10MB before compression)
+      // Validate file size (max 10MB before compression/processing)
       if (file.size > 10 * 1024 * 1024) {
-        showToast('File size must be less than 10MB. Please use a smaller image.', 'error');
+        showToast('File size must be less than 10MB. Please use a smaller file.', 'error');
         return;
-      }
-
-      // Show compression message for large files
-      if (file.size > 2 * 1024 * 1024) {
-        showToast('Compressing image for optimal upload...', 'info');
       }
 
       try {
-        // Compress image if it's large (compress if > 1MB)
         let processedFile = file;
-        if (file.size > 1 * 1024 * 1024) {
-          processedFile = await compressImage(file, 1920, 2560, 0.85, 2.5);
-          if (processedFile.size < file.size) {
-            showToast(`Image compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`, 'success');
+        
+        // Only compress images, not PDFs
+        if (isImage) {
+          // Show compression message for large image files
+          if (file.size > 2 * 1024 * 1024) {
+            showToast('Compressing image for optimal upload...', 'info');
+          }
+          
+          // Compress image if it's large (compress if > 1MB)
+          if (file.size > 1 * 1024 * 1024) {
+            processedFile = await compressImage(file, 1920, 2560, 0.85, 2.5);
+            if (processedFile.size < file.size) {
+              showToast(`Image compressed from ${(file.size / 1024 / 1024).toFixed(2)}MB to ${(processedFile.size / 1024 / 1024).toFixed(2)}MB`, 'success');
+            }
+          }
+        } else if (isPDF) {
+          // For PDFs, just validate size
+          if (file.size > 5 * 1024 * 1024) {
+            showToast('PDF file is large. Maximum recommended size is 5MB.', 'warning');
           }
         }
 
         setSelectedFile(processedFile);
 
-        // Create preview
+        // Create preview (for images) or show PDF icon
         const reader = new FileReader();
         reader.onloadend = () => {
           setPreview(reader.result);
         };
         reader.readAsDataURL(processedFile);
       } catch (error) {
-        console.error('Error processing image:', error);
-        showToast('Error processing image. Please try another file.', 'error');
+        console.error('Error processing file:', error);
+        showToast('Error processing file. Please try another file.', 'error');
       }
     }
   };
 
   const handleUpload = async () => {
     if (!selectedFile) {
-      showToast('Please select an image file to upload', 'error');
+      showToast('Please select a file (image or PDF) to upload', 'error');
       return;
     }
 
@@ -142,9 +154,12 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
       // Vercel has 4.5MB request body limit, we'll target 2.5MB to be safe (base64 adds ~33% overhead)
       const maxSize = 2.5 * 1024 * 1024; // 2.5MB
       
-      // Check file size and compress further if needed
+      // Check file size and compress further if needed (only for images)
+      const isImage = selectedFile.type.startsWith('image/');
+      const isPDF = selectedFile.type === 'application/pdf';
       let fileToUpload = selectedFile;
-      if (selectedFile.size > maxSize) {
+      
+      if (isImage && selectedFile.size > maxSize) {
         showToast('Compressing image further to meet size requirements...', 'info');
         
         try {
@@ -166,6 +181,13 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
         } catch (compressionError) {
           console.error('Compression error:', compressionError);
           showToast('Unable to compress image further. Please use a smaller file.', 'error');
+          setIsUploading(false);
+          return;
+        }
+      } else if (isPDF && selectedFile.size > maxSize) {
+        // For PDFs, just warn if too large
+        if (selectedFile.size > 3.5 * 1024 * 1024) {
+          showToast('PDF file is too large. Maximum size is 3.5MB. Please compress the PDF or use a smaller file.', 'error');
           setIsUploading(false);
           return;
         }
@@ -235,8 +257,12 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
           // Handle specific error types
           if (errorMessage.includes('413') || errorMessage.includes('too large') || errorMessage.includes('Content Too Large')) {
             showToast('File is too large for upload. Please compress the image or use a smaller file (under 2MB recommended).', 'error');
-          } else if (errorMessage.includes('email') && (errorMessage.includes('configuration') || errorMessage.includes('authentication'))) {
-            showToast('Email service error. Please check Vercel environment variables (EMAIL_USER, EMAIL_PASSWORD).', 'error');
+          } else if (errorMessage.includes('email') && (errorMessage.includes('configuration') || errorMessage.includes('authentication') || errorMessage.includes('App Password'))) {
+            // Show detailed error message for email authentication issues
+            const detailedMsg = errorMessage.includes('App Password') 
+              ? errorMessage 
+              : 'Email service error. Please check Vercel environment variables (EMAIL_USER, EMAIL_PASSWORD). For Gmail, you must use an App Password, not your regular password.';
+            showToast(detailedMsg, 'error');
           } else {
             showToast(`Upload failed: ${errorMessage}`, 'error');
           }
@@ -284,10 +310,10 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
         {/* File Upload Area */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Select Resume Image <span className="text-red-500">*</span>
+            Select Resume File (Image or PDF) <span className="text-red-500">*</span>
           </label>
           
-          {!preview ? (
+          {!preview && !selectedFile ? (
             <div
               onClick={() => fileInputRef.current?.click()}
               className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-200"
@@ -309,42 +335,73 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
                 <span className="font-semibold text-blue-600">Click to upload</span> or drag and drop
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                PNG, JPG, GIF (automatically compressed to optimal size)
+                PNG, JPG, GIF, PDF (images automatically compressed)
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                Recommended: Under 2MB for best results
+                Recommended: Under 2MB for images, 3.5MB for PDFs
               </p>
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="relative border-2 border-gray-200 rounded-xl overflow-hidden">
-                <img
-                  src={preview}
-                  alt="Resume preview"
-                  className="w-full h-auto max-h-96 object-contain bg-gray-50"
-                />
-                <button
-                  onClick={() => {
-                    setSelectedFile(null);
-                    setPreview(null);
-                    if (fileInputRef.current) {
-                      fileInputRef.current.value = '';
-                    }
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
-                  aria-label="Remove image"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+              {selectedFile?.type === 'application/pdf' ? (
+                // PDF Preview
+                <div className="relative border-2 border-gray-200 rounded-xl overflow-hidden bg-gray-50 p-8">
+                  <div className="text-center">
+                    <svg className="mx-auto h-16 w-16 text-red-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-sm font-semibold text-gray-900">{selectedFile.name}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setPreview(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
+                    aria-label="Remove file"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                // Image Preview
+                <div className="relative border-2 border-gray-200 rounded-xl overflow-hidden">
+                  <img
+                    src={preview}
+                    alt="Resume preview"
+                    className="w-full h-auto max-h-96 object-contain bg-gray-50"
+                  />
+                  <button
+                    onClick={() => {
+                      setSelectedFile(null);
+                      setPreview(null);
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = '';
+                      }
+                    }}
+                    className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full hover:bg-red-700 shadow-lg"
+                    aria-label="Remove image"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
               <div className="text-center">
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                 >
-                  Change Image
+                  Change File
                 </button>
               </div>
             </div>
@@ -353,7 +410,7 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,application/pdf"
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -373,19 +430,19 @@ const UploadResumeModal = ({ isOpen, onClose, submission, onSuccess }) => {
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-500">Type: {selectedFile.type}</p>
+                <p className="text-xs text-gray-500">Type: {selectedFile.type === 'application/pdf' ? 'PDF' : selectedFile.type}</p>
                 <p className={`text-xs mt-1 font-semibold ${
                   selectedFile.size <= 2.5 * 1024 * 1024 
                     ? 'text-green-600' 
-                    : selectedFile.size <= 3 * 1024 * 1024
+                    : selectedFile.size <= 3.5 * 1024 * 1024
                     ? 'text-yellow-600'
                     : 'text-red-600'
                 }`}>
                   {selectedFile.size <= 2.5 * 1024 * 1024 
                     ? '✓ Ready to upload' 
-                    : selectedFile.size <= 3 * 1024 * 1024
-                    ? '⚠ Will compress'
-                    : '⚠ Needs compression'}
+                    : selectedFile.size <= 3.5 * 1024 * 1024
+                    ? selectedFile.type === 'application/pdf' ? '⚠ Large PDF' : '⚠ Will compress'
+                    : '⚠ Too large'}
                 </p>
               </div>
             </div>
